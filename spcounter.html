@@ -1,0 +1,50 @@
+<html>
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.steemjs.com/lib/latest/steem.min.js"></script>
+    <script src="odometer.js"></script>
+
+
+    <link rel="stylesheet" href="odometer-theme-car.css">
+
+    <script type="text/javascript">
+      $(function() {
+        var el = document.getElementById('sp');
+
+        var steem_per_mvests = 0;
+        //var vests = 33325621.542032;
+
+        function update() {
+          steem.api.getAccounts(['steem-mart'], function(e, r) {
+            if(r) {
+              var vests = parseFloat(r[0].vesting_shares);
+
+              steem.api.getDynamicGlobalProperties(function (e, t) {
+                  var tVFS = t.total_vesting_fund_steem.replace(' STEEM', '');
+                  var tVS = t.total_vesting_shares.replace(' VESTS', '');
+                  steem_per_mvests = ((tVFS / tVS) * 1000000);
+
+                  console.log('steem_per_mvests: ' + steem_per_mvests);
+                  console.log('SP: ' + vests / 1000000 * steem_per_mvests);
+
+                  od = new Odometer({
+                    el: el,
+                    format: '(,ddd).dddddd',
+                    theme: 'car',
+                    duration: 5000
+                  });
+
+                  $('#sp').text(vests / 1000000 * steem_per_mvests);
+              });
+            }
+          });
+        }
+
+        setInterval(update, 5000);
+      });
+    </script>
+  </head>
+  <body>
+    <div id="sp" class=""></div>
+  </body>
+</html>
