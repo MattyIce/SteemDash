@@ -7,6 +7,7 @@ $(function () {
 
   update();
   setInterval(update, 10000);
+  updateSteemVariables();
 
   $('#account_name').text('@' + account_name);
 
@@ -30,12 +31,22 @@ $(function () {
 
       if (first_load) {
         new Odometer({ el: document.getElementById('sp'), format: '(,ddd).dddddd', theme: 'car' });
+        new Odometer({ el: document.getElementById('sp_received'), format: '(,ddd).dddddd', theme: 'car' });
+        new Odometer({ el: document.getElementById('sp_delegated'), format: '(,ddd).dddddd', theme: 'car' });
+        new Odometer({ el: document.getElementById('sp_voting'), format: '(,ddd).dddddd', theme: 'car' });
+        new Odometer({ el: document.getElementById('vote_value'), format: '(,ddd).dd', theme: 'car' });
         new Odometer({ el: document.getElementById('steem'), format: '(,ddd).ddd', theme: 'car' });
         new Odometer({ el: document.getElementById('sbd'), format: '(,ddd).ddd', theme: 'car' });
         first_load = false;
       }
 
       $('#sp').text(vests / 1000000 * steem_per_mvests);
+      $('#sp_received').text(parseFloat(account.received_vesting_shares) / 1000000 * steem_per_mvests);
+      $('#sp_delegated').text(parseFloat(account.delegated_vesting_shares) / 1000000 * steem_per_mvests);
+      $('#sp_voting').text((vests + parseFloat(account.received_vesting_shares) - parseFloat(account.delegated_vesting_shares)) / 1000000 * steem_per_mvests);
+
+      console.log(getVoteValue(100, account));
+      $('#vote_value').text(getVoteValue(100, account));
       $('#steem').text(parseFloat(account.balance));
       $('#sbd').text(parseFloat(account.sbd_balance));
 
@@ -59,9 +70,7 @@ $(function () {
         var ts = new Date((trans[1].timestamp) + 'Z');
         
         if (trans_types.indexOf(op[0]) >= 0 && trans[0] > last_trans) {
-          console.log('trans[0]: ' + trans[0] + ', last_trans: ' + last_trans);
           var row = $(document.createElement('tr'));
-
           var cell = $(document.createElement('td'));
 
           var msg = '';
@@ -81,6 +90,31 @@ $(function () {
           last_trans = trans[0];
         }        
       }
+    });
+  }
+
+  loadPrices();
+	function loadPrices(callback) {
+    var loaded = 0;
+    
+		// Load the current prices of STEEM and SBD
+		$.get('https://api.coinmarketcap.com/v1/ticker/steem/', function (data) {
+			steem_price = parseFloat(data[0].price_usd);
+			$('#steem_price').text(steem_price.formatMoney());
+      $('#steem_price_container').css('color', (parseFloat(data[0].percent_change_24h) < 0) ? 'red' : 'green');
+      
+      if(++loaded == 2 && callback)
+        callback();
+		});
+
+    // Load the current prices of STEEM and SBD
+		$.get('https://api.coinmarketcap.com/v1/ticker/steem-dollars/', function (data) {
+			sbd_price = parseFloat(data[0].price_usd);
+			$('#sbd_price').text(sbd_price.formatMoney());
+      $('#sbd_price_container').css('color', (parseFloat(data[0].percent_change_24h) < 0) ? 'red' : 'green');
+      
+      if(++loaded == 2 && callback)
+        callback();
     });
   }
 });
